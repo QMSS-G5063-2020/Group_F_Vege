@@ -1,0 +1,71 @@
+Title: 
+¡¡¡¡Group F: Vege
+¡¡¡¡
+Member: 
+Lin Zhao (lz2711@columbia.edu)
+Ming Gong (mg4122@columbia.edu)
+Taketo Muroya (tm3068@columbia.edu)
+Wenjun Sun (ws2578@columbia.edu)
+
+Abstract:
+
+Data:
+* Vegetarian Restaurants
+- Happycow.net
+https://www.happycow.net/
+List vegetarian and vegan restaurants, include many details
+No API, probably need web scrapping
+- vegetarian and vegan restaurants dataset from Datafiniti 
+https://www.kaggle.com/datafiniti/vegetarian-vegan-restaurants
+This is a list of over 18,000 restaurants in the US that serve vegetarian or vegan food provided by Datafiniti's Business Database. The dataset includes address, city, state, business name, business categories, menu data, phone numbers.
+But this is just a sample of a large dataset. The full dataset is available through Datafiniti, which is not free.
+- other
+* Consumer
+- Share of consumers who consider themselves vegan or vegetarian in the United States as of June 2018
+https://www.statista.com/statistics/738851/vegan-vegetarian-consumers-us/#statisticContainer
+https://news.gallup.com/poll/238328/snapshot-few-americans-vegetarian-vegan.aspx?g_source=link_NEWSV9&g_medium=NEWSFEED&g_campaign=item_&g_content=Snapshot%3a%2520Few%2520Americans%2520Vegetarian%2520or%2520Vegan
+This data is an aggregated one, aggregated according to age group, income group, political ideology
+- Consumer attitudes towards the vegetarian diet in the US in 2016
+https://www.statista.com/statistics/591963/us-consumer-attitudes-towards-the-vegetarian-diet/
+Aggregated data
+- How many people are vegetarian or vegan? from the Vegetarian Resource Group
+https://www.vrg.org/nutshell/faq.htm#poll
+Aggregated data 
+-  
+* market share/sells
+* Recipe/Gradient
+- Recipe collection from the Vegetarian Resource Group 
+https://www.vrg.org/journal/CookingAndRecipes.htm
+A website collects vegetarian recipes. Probably need web scrapping to get the data. But the web pages are not in a consistent format. 
+- BudgetByte.com 
+https://www.budgetbytes.com/category/recipes/
+This is a recipe website; it has vegetarian and vegan categories. We can try web scrapping it. 
+- Early American Cookbook
+https://wp.nyu.edu/early_american_cookbooks/
+Cookbook titles 
+Early American Cookbooks is a carefully curated collection of 1450 cookbooks published in the United States between 1800 and 1920. All of the titles in the collection are in the public domain and are available in full-text on the HathiTrust Digital Library.
+Potentially show how the term ¡°vegetarian/vegan¡± gets popular over time. 
+-  
+* Nutrition
+- Food and Nutrient Database for Dietary Studies, U.S. Department of Agriculture
+https://fdc.nal.usda.gov/help.html
+https://fdc.nal.usda.gov/download-datasets.html
+This data can be downloaded as a csv file or accessed using API. 
+- 
+
+* State ideology
+* City
+- Most Vegetarian- & Vegan-Friendly Cities
+https://wallethub.com/edu/best-cities-for-vegans-vegetarians/39706/
+Include 100 US cities, rank them based on affordability, diversity, and vegetarian lifestyle
+* Save animals
+* Google trends
+Google trends in the US, in each state, city, 
+   
+
+	
+Outlines:
+
+Concerns:
+We may have data from different years, would that be a problem? For example, the customer preference dataset is from 2018 but the restaurant dataset is from 2019.  
+
