@@ -1,0 +1,133 @@
+---
+title: "Final Project"
+author: "Taketo Muroya"
+output: 
+  html_document:
+    code_folding: hide
+    highlight: textmate
+    toc: yes
+always_allow_html: yes
+---
+
+```{r Setup, include=FALSE, results='hide', warning=FALSE}
+library(knitr)
+opts_chunk$set(fig.path="figures/", cache.path="cache/", 
+               cache=FALSE,echo=TRUE,message=FALSE,warning=FALSE)
+
+```
+
+```{r}
+# Setting up
+library(RColorBrewer)
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(dplyr)
+library(gtrendsR)
+```
+
+## Google Trend
+
+```{r, fig.width=10, fig.height=5}
+# Vegetarian search
+veg <- gtrends(keyword=c("vegetarian"), geo="US", time="today+5-y")
+trend <- veg$interest_over_time
+region <- veg$interest_by_region
+
+plot<-ggplot(trend, aes(x=date, y=hits, group=keyword, col=keyword))+
+  geom_line(color='#4E79A7')+xlab('Time')+ylab('Search volume (Max=100)')+
+  geom_smooth(span=0.5, method='loess', se=FALSE, color='#E15759')+
+  ggtitle("Google Search 'Vegetarian'")+theme_hc()
+plot
+
+# search by state
+region_top <- region[1:8,]
+p1<-ggplot(region_top, aes(x=reorder(location, hits), y=hits))+
+  geom_bar(fill='#59A14F', stat="identity", position="identity", alpha=0.5)+
+  xlab('State')+ylab('Search volume (Max=100)')+
+  ggtitle("Top 8 states searching 'Vegetarian'")+theme_hc()
+
+region_bottom <- region[44:51,]
+p2<-ggplot(region_bottom, aes(x=reorder(location, desc(hits)), y=hits))+
+  geom_bar(fill="#F28E2B", stat="identity", position="identity", alpha=0.5)+
+  xlab('State')+ylab('Search volume (Max=100)')+
+  ggtitle("Bottom 8 states searching 'Vegetarian'")+theme_hc()
+
+gridExtra::grid.arrange(p1, p2, ncol=1)
+
+# Vegan search
+veg <- gtrends(keyword=c("vegan"), geo="US", time="today+5-y")
+trend <- veg$interest_over_time
+region <- veg$interest_by_region
+
+plot<-ggplot(trend, aes(x=date, y=hits, group=keyword, col=keyword))+
+  geom_line(color='#4E79A7')+xlab('Time')+ylab('Search volume (Max=100)')+
+  geom_smooth(span=0.5, method='loess', se=FALSE, color='#E15759')+
+  ggtitle("Google Search 'Vegan'")+theme_hc()
+plot
+
+# search by state
+region_top <- region[1:8,]
+p1<-ggplot(region_top, aes(x=reorder(location, hits), y=hits))+
+  geom_bar(fill='#59A14F', stat="identity", position="identity", alpha=0.5)+
+  xlab('State')+ylab('Search volume (Max=100)')+
+  ggtitle("Top 8 states searching 'Vegan'")+theme_hc()
+
+region_bottom <- region[44:51,]
+p2<-ggplot(region_bottom, aes(x=reorder(location, desc(hits)), y=hits))+
+  geom_bar(fill="#F28E2B", stat="identity", position="identity", alpha=0.5)+
+  xlab('State')+ylab('Search volume (Max=100)')+
+  ggtitle("Bottom 8 states searching 'Vegan'")+theme_hc()
+
+gridExtra::grid.arrange(p1, p2, ncol=1)
+```
+
+## Who is vegetarian/vegan?
+
+```{r, fig.width=10, fig.height=5}
+# https://news.gallup.com/poll/238328/snapshot-few-americans-vegetarian-vegan.aspx
+consumer <- read.csv("consumer_r.csv")
+
+# change order
+consumer <- 
+  transform(consumer, 
+            category=factor(category, 
+                            levels=c("18-29", "30-49", "50-64", "65+", 
+                                     "-$30,000", "$30,000-$74,999", "$75,000+",
+                                     "Conservative", "Moderate", "Liberal")))
+
+consumer <- 
+  transform(consumer, group=factor(group, levels=c("vegetarian", "vegan")))
+
+# visualization
+p1<-ggplot(consumer[1:8,], aes(x=category, y=value, fill=group))+
+  geom_bar(position="dodge", stat="identity", alpha=0.5)+
+  xlab(' ')+ylab('percentage')+ggtitle("Age")+theme_hc()+
+  scale_fill_tableau(palette="Tableau 10")+theme(legend.title=element_blank())
+
+p2<-ggplot(consumer[9:14,], aes(x=category, y=value, fill=group))+
+  geom_bar(position="dodge", stat="identity", alpha=0.5)+
+  xlab(' ')+ylab(' ')+ggtitle("Annual Income")+theme_hc()+
+  scale_fill_tableau(palette="Tableau 10")+theme(legend.title=element_blank())
+
+p3<-ggplot(consumer[15:20,], aes(x=category, y=value, fill=group))+
+  geom_bar(position="dodge", stat="identity", alpha=0.5)+
+  xlab(' ')+ylab(' ')+ggtitle("Political Ideology")+theme_hc()+
+  scale_fill_tableau(palette="Tableau 10")+theme(legend.title=element_blank())
+
+gridExtra::grid.arrange(p1, p2, p3, nrow = 1)
+
+#pie(consumer$vegetarian[1:4], labels=c("18-29","30-49","50-64","65+"))+
+#  scale_fill_tableau(palette="Tableau 10")
+
+#pie(consumer$vegetarian[5:7], labels=c("18-29","30-49","50-64"))+
+#  scale_fill_tableau(palette="Tableau 10")
+
+#pie(consumer$vegetarian[8:10], labels=c("18-29","30-49","50-64"))+
+#  scale_fill_tableau(palette="Tableau 10")
+
+#ggplot(consumer[1:4,], aes(x="", y=vegetarian, fill=category))+
+#  geom_bar(stat="identity", width=1) + coord_polar("y", start=0)+
+#  theme_hc()+scale_fill_tableau(palette="Tableau 10")+
+#  geom_text(aes(y=vegetarian, label=vegetarian), color="black", size=3)
+```
