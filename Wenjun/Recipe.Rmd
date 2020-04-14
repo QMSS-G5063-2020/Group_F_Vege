@@ -1,0 +1,90 @@
+---
+title: "Recipe"
+author: "Wenjun Sun"
+date: "2020/4/14"
+output: 
+  html_document:
+    df_print: paged
+    code_folding: show
+    fig_width: 8
+    fig_height: 6
+---
+
+```{r Setup, include=FALSE, results='hide', warning=FALSE}
+library(knitr)
+opts_chunk$set(fig.path="figures\\",
+               cache.path="cache\\",
+               cache=FALSE,
+               echo=TRUE,
+               message=FALSE,
+               warning=FALSE) 
+library(dplyr)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+```
+
+# Recipe {.tabset .tabset-fade .tabset-pills}
+
+## Get the data
+
+Extract the Top 1000 popular vegetarian recipes and their ingredient using Spoonacular API. 
+
+```{r eval=FALSE}
+# the API key of Spoonacular is stored as environment variable "spoonacular_api_key" and "spoonacular_api_key_ljy"
+
+# store and retrive key to environment 
+#Sys.setenv(spoonacular_api_key = "")
+#Sys.getenv("spoonacular_api_key")
+
+
+combined <- data.frame(recipe_id = integer(),
+                       recipe_name = character())
+
+for (n in seq(0,900,100)) {
+  request <- httr::GET(
+    "https://api.spoonacular.com/recipes/complexSearch", 
+    query = list(apiKey = Sys.getenv("spoonacular_api_key"),
+                 diet = "vegetarian",
+                 number = 100,
+                 offset = n, # Spoonacular API only allows this to range from 0 to 900
+                 sort = "popularity",
+                 sortDirection = "desc"
+                 )
+    )  
+  
+  response <- jsonlite::fromJSON(httr::content(request, as = "text", encoding = "UTF-8"), flatten = TRUE)[[1]] %>%
+  dplyr::select(recipe_id = id, recipe_name = title)
+  
+  combined <- rbind(combined, response)
+  
+  print(paste("extracted", n + 100, "recipes"))
+}
+
+save(combined, file = "combined_recipe_id.RData")
+```
+
+```{r}
+combined <- combined %>%
+  mutate(ingredient = NA)
+
+for (i in 1:nrow(combined)) {
+  recipe_id <- combined[i, "recipe_id"]
+  request <- httr::GET(
+    paste0("https://api.spoonacular.com/recipes/",recipe_id,"/ingredientWidget.json"), 
+    query = list(apiKey = Sys.getenv("spoonacular_api_key")))
+  
+  response <- jsonlite::fromJSON(httr::content(request, as = "text", encoding = "UTF-8"), flatten = TRUE)[[1]] 
+  
+  ingredient <- response[["name"]]
+  
+  combined[i, "ingredient"] <- paste(ingredient, collapse = "//")
+}
+
+save(combined, file = "combined_recipe_id_ingredient.RData")
+```
+
+## Visualization
+
+
+
