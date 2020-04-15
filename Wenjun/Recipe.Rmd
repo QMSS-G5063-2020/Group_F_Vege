@@ -90,55 +90,93 @@ save(combined, file = "combined_recipe_id_ingredient.RData")
 
 ## Preprocess
 
-```{r}
-# combine all ingredient together
-# measure: count 
+```{r clean ingredient}
+library(stringr)
+library(SemNetCleaner)
+
+load("combined_recipe_id_ingredient.RData")
 
 allIngredient <- paste(combined$ingredient, collapse = "//")
 ingredientList <- strsplit(allIngredient, "//")
 ingredientDf <- data.frame(ingredientList, stringsAsFactors = FALSE)
 names(ingredientDf) <- "ingredient"
+
 ingredientDf <- ingredientDf %>%
-  mutate(ingredient = case_when(ingredient %in% c("granulated sugar", "white sugar", "white granulated sugar") ~ "sugarr",
-                                ingredient == "baking powder" ~ "baking soda",
-                                ingredient %in% c("eggs", "whole eggs", "whole egg") ~ "egg",
+  mutate(ingredient = case_when(ingredient %in% c("bread flour", "all purpose flour","gluten-free gluten free all purpose baking flour","whole wheat white flour","canned all purpose flour","plain flour","AP flour","plain all purpose flour","gluten free flour","gluten-free flour","unbleached flour","unbleached all purpose flour","white bread flour") ~ "flour",
+                                ingredient %in% c("whole wheat flour","white whole wheat flour","white whole wheat pastry flour","whole-wheat pastry flour") ~ "whole wheat flour",
                                 ingredient == "ground cinnamon" ~ "cinnamon",
-                                ingredient == "confectioners' sugar" ~ "powdered sugar",
+                                ingredient == "baking powder" ~ "baking soda",
                                 ingredient == "garlic cloves" ~ "garlic",
                                 ingredient %in% c("fresh lemon juice", "lemon (juice)") ~ "lemon juice",
-                                ingredient == "avocados" ~ "avocado",
-                                ingredient == "fresh lime juice" ~ "lime juice",
-                                ingredient == "fresh blueberries" ~ "blueberries",
-                                ingredient == "bananas" ~ "banana",
-                                ingredient == "sea-salt" ~ "sea salt",
                                 ingredient == "egg yolks" ~ "egg yolk",
                                 ingredient == "egg whites" ~ "egg white",
-                                TRUE ~ ingredient)) %>%
+                                ingredient %in% c("unsalted butter", "salted butter", "unsalted salted butter") ~ "butter",
+                                ingredient == "half n half cream" ~ "half & half cream",
+                                ingredient %in% c("red onion", "vidalia onion", "yellow onion", "white onion", "sweet onion", "red white yellow onion", "red diced onion", "white yellow onion", "yellow onions", "red onions", "sweet onions", "onions") ~ "onion",
+                                ingredient %in% c("green onions", "spring onions", "scallions", "green white scallions", "scallion", "green white light scallions") ~ "green onion",
+                                ingredient == "apples" ~ "apple",
+                                ingredient == "basil leaves" ~ "basil",
+                                ingredient == "bay leaves" ~ "bay leaf",
+                                ingredient %in% c("barbecue sauce", "Barbeque Dipping Sauce") ~ "bbq sauce",
+                                TRUE ~ ingredient))
+
+ingredientDf[str_detect(ingredientDf$ingredient, "\\b(apple|apples)$"),] <- "apple" # because the singularize() function has trouble dealing with "apples", so we have to move this one up to here
+
+ingredientDf <- ingredientDf %>%
+  mutate(ingredient = str_replace(ingredient, "^(dried |diced |fresh |frozen |whole )+(.*)$", "\\2")) # remove leading dried, diced ...
+
+ingredientDf$ingredient <- unlist(map(ingredientDf$ingredient, singularize)) # plural to single, takes a few minutes to run
+
+# combine some too detailed ingredient
+ingredientDf[str_detect(ingredientDf$ingredient, "sugar"),]  <- "sugar"
+ingredientDf[str_detect(ingredientDf$ingredient, "\\bsalt\\b"),] <- "salt"
+ingredientDf[str_detect(ingredientDf$ingredient, "flour tortillas"),] <- "flour tortillas"
+ingredientDf[str_detect(ingredientDf$ingredient, "coconut milk"),] <- "coconut milk"
+ingredientDf[str_detect(ingredientDf$ingredient, "peanut butter"),] <- "peanut butter"
+ingredientDf[str_detect(ingredientDf$ingredient, "oil$"),] <- "oil"
+ingredientDf[str_detect(ingredientDf$ingredient, "cheese$"),] <- "cheese"
+ingredientDf[str_detect(ingredientDf$ingredient, "sour cream$"),] <- "sour cream"
+
+ingredientDfCleaned <- ingredientDf %>%
   group_by(ingredient) %>%
   summarise(cnt = n()) %>%
   ungroup() %>%
-  filter(!ingredient %in% c("a mixture of the two", 
-                            "add a little more if the batter appears to be too",
-                            "as necessary"))
+  arrange(desc(cnt))
 
-save(ingredientDf, file = "ingredientDf.RData")
+save(ingredientDfCleaned, file = "ingredientDfCleaned.RData")
 ```
+
+## Visualization 
+
+### Wordcloud
+
+If all ingredients are included ... 
 
 ```{r}
 library(wordcloud)
 
-wordcloudDf <- ingredientDf %>%
-  filter(cnt > 1) %>%
-  top_frac(n = -.98, wt = cnt) # remove some ingredient that is too common 
+wordcloudDf <- ingredientDfCleaned 
 
 set.seed(1997)
-wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.3), min.freq = 0,
+wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(2,.5), min.freq = 0,
           max.words = 100, 
-          colors = brewer.pal(max(9, ncol(wordcloudDf$cnt)),"Reds"))
+          colors = "#41ab5d")
 ```
 
+Exclude ingredients that are too rara (appeared less than 5 times) or too common (more than 100 times).  
+
+```{r}
+wordcloudDf <- ingredientDfCleaned %>%
+  filter(cnt > 10 & cnt < 100) 
+
+set.seed(1997)
+wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.25), min.freq = 0,
+          max.words = 100, 
+          colors = brewer.pal(max(7, ncol(wordcloudDf$cnt)),"Greens"))
+```
+
+### Bar
+
+### Network
 
 
-todo: clean ingredient
-  sugar, salt, milk
-  plural 
