@@ -26,6 +26,7 @@ library(jsonlite)
 
 #library(tm)
 library(wordcloud)
+library(plotly)
 ```
 
 # Recipe {.tabset .tabset-fade .tabset-pills}
@@ -176,6 +177,38 @@ wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.25), min.freq 
 ```
 
 ### Bar
+
+```{r}
+library(plotly)
+library(forcats)
+
+top20Ingredient <- ingredientDfCleaned %>%
+  filter(cnt > 10 & cnt < 100) %>%
+  top_n(n = 20, wt = cnt) %>%
+  mutate(ingredient = fct_reorder(ingredient, cnt))
+
+
+plot_ly(top20Ingredient,
+        x = ~cnt, y = ~ingredient, name = "",
+        type = "bar", orientation = "h",
+        hovertemplate = paste('%{y}', '<br>%{x} recipes<br>'),
+        marker = list(
+          color = "#41ab5d",
+          line = list(width = 0)
+        )) %>%
+  layout(title = "Popular Ingredients in Vegetarian Recipes",
+         xaxis = list(title = "# of recipes with the ingredient"),
+         yaxis = list(title = ""),
+         annotations = list(x = 0.21, y = -0.115, 
+                            text = "Note: Ingredients appear in less than 10 recipes or \nmore than 100 recipes are excluded.",
+                            showarrow = F, xref='paper', yref='paper', 
+                            xanchor='right', yanchor='auto', xshift=0, yshift=0,align="left",
+                            font=list(size=10, color="grey")))
+  
+fig <- plot_ly(df, type='bar', x = ~country, y = ~pop, text = ~lifeExp, name="",
+               hovertemplate = paste('%{x}', '<br>lifeExp: %{text:.2s}<br>'),
+               texttemplate = '%{y:.2s}', textposition = 'outside')
+```
 
 ### Network
 
