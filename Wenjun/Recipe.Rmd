@@ -20,15 +20,19 @@ opts_chunk$set(fig.path="figures\\",
                warning=FALSE) 
 library(dplyr)
 library(tidyverse)
+
 library(httr)
 library(jsonlite)
+
+#library(tm)
+library(wordcloud)
 ```
 
 # Recipe {.tabset .tabset-fade .tabset-pills}
 
 ## Get the data
 
-Extract the Top 1000 popular vegetarian recipes and their ingredient using Spoonacular API. 
+Extract the Top 1000 popular vegetarian recipes and their ingredient using [Spoonacular API](https://spoonacular.com/food-api). 
 
 ```{r eval=FALSE}
 # the API key of Spoonacular is stored as environment variable "spoonacular_api_key" and "spoonacular_api_key_ljy"
@@ -84,7 +88,57 @@ for (i in 1:nrow(combined)) {
 save(combined, file = "combined_recipe_id_ingredient.RData")
 ```
 
-## Visualization
+## Preprocess
+
+```{r}
+# combine all ingredient together
+# measure: count 
+
+allIngredient <- paste(combined$ingredient, collapse = "//")
+ingredientList <- strsplit(allIngredient, "//")
+ingredientDf <- data.frame(ingredientList, stringsAsFactors = FALSE)
+names(ingredientDf) <- "ingredient"
+ingredientDf <- ingredientDf %>%
+  mutate(ingredient = case_when(ingredient %in% c("granulated sugar", "white sugar", "white granulated sugar") ~ "sugarr",
+                                ingredient == "baking powder" ~ "baking soda",
+                                ingredient %in% c("eggs", "whole eggs", "whole egg") ~ "egg",
+                                ingredient == "ground cinnamon" ~ "cinnamon",
+                                ingredient == "confectioners' sugar" ~ "powdered sugar",
+                                ingredient == "garlic cloves" ~ "garlic",
+                                ingredient %in% c("fresh lemon juice", "lemon (juice)") ~ "lemon juice",
+                                ingredient == "avocados" ~ "avocado",
+                                ingredient == "fresh lime juice" ~ "lime juice",
+                                ingredient == "fresh blueberries" ~ "blueberries",
+                                ingredient == "bananas" ~ "banana",
+                                ingredient == "sea-salt" ~ "sea salt",
+                                ingredient == "egg yolks" ~ "egg yolk",
+                                ingredient == "egg whites" ~ "egg white",
+                                TRUE ~ ingredient)) %>%
+  group_by(ingredient) %>%
+  summarise(cnt = n()) %>%
+  ungroup() %>%
+  filter(!ingredient %in% c("a mixture of the two", 
+                            "add a little more if the batter appears to be too",
+                            "as necessary"))
+
+save(ingredientDf, file = "ingredientDf.RData")
+```
+
+```{r}
+library(wordcloud)
+
+wordcloudDf <- ingredientDf %>%
+  filter(cnt > 1) %>%
+  top_frac(n = -.98, wt = cnt) # remove some ingredient that is too common 
+
+set.seed(1997)
+wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.3), min.freq = 0,
+          max.words = 100, 
+          colors = brewer.pal(max(9, ncol(wordcloudDf$cnt)),"Reds"))
+```
 
 
 
+todo: clean ingredient
+  sugar, salt, milk
+  plural 
