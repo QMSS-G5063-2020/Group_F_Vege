@@ -166,7 +166,7 @@ wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(2,.5), min.freq = 0
           colors = "#41ab5d")
 ```
 
-Exclude ingredients that are too rara (appeared less than 5 times) or too common (more than 100 times).  
+Exclude ingredients that are too rare (appeared less than 5 times) or too common (more than 100 times).  
 
 ```{r}
 wordcloudDf <- ingredientDfCleaned %>%
@@ -180,7 +180,7 @@ wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.25), min.freq 
 
 ### Bar
 
-Although bar plot is more informative than wordcloud, I found they look overly simple. Any suggest to make them cooler?
+Although bar plot is more informative than wordcloud, I found they look overly simple. Any suggestion about how to make them cooler?
 
 #### static 
 
