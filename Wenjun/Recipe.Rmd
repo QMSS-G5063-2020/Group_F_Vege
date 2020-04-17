@@ -6,8 +6,8 @@ output:
   html_document:
     df_print: paged
     code_folding: show
-    fig_width: 8
-    fig_height: 6
+    #fig_width: 8
+    #fig_height: 6
 ---
 
 ```{r Setup, include=FALSE, results='hide', warning=FALSE}
@@ -27,6 +27,8 @@ library(jsonlite)
 #library(tm)
 library(wordcloud)
 library(plotly)
+library(ggplot2)
+library(ggthemes)
 ```
 
 # Recipe {.tabset .tabset-fade .tabset-pills}
@@ -69,7 +71,7 @@ for (n in seq(0,900,100)) {
 save(combined, file = "combined_recipe_id.RData")
 ```
 
-```{r}
+```{r eval = FALSE}
 combined <- combined %>%
   mutate(ingredient = NA)
 
@@ -164,7 +166,7 @@ wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(2,.5), min.freq = 0
           colors = "#41ab5d")
 ```
 
-Exclude ingredients that are too rara (appeared less than 5 times) or too common (more than 100 times).  
+Exclude ingredients that are too rare (appeared less than 5 times) or too common (more than 100 times).  
 
 ```{r}
 wordcloudDf <- ingredientDfCleaned %>%
@@ -177,6 +179,52 @@ wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.25), min.freq 
 ```
 
 ### Bar
+
+Although bar plot is more informative than wordcloud, I found they look overly simple. Any suggestion about how to make them cooler?
+
+#### static 
+
+```{r}
+library(ggplot2)
+library(ggthemes)
+
+top20Ingredient <- ingredientDfCleaned %>%
+  filter(cnt > 10 & cnt < 100) %>%
+  top_n(n = 20, wt = cnt) %>%
+  mutate(ingredient = fct_reorder(ingredient, cnt))
+
+ggplot(top20Ingredient) + 
+  geom_bar(aes(x = ingredient, y = cnt),
+           stat = "identity", position = "identity", fill = "#639a67", alpha = 0.8) +  
+  geom_text(aes(x = ingredient, y = cnt, label = cnt), 
+            color = "white", fontface = "bold", size = 3, hjust = 1.5) + 
+  coord_flip() + 
+  
+  labs(
+    title = "",
+    caption = "
+    Note: Ingredients appear in less than 10 recipes or more than 300 recipes are excluded.
+    Data Source: https://spoonacular.com/food-api/
+    "
+  ) + 
+  
+  theme_hc() +
+  
+  theme(
+    panel.grid.major.y = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x = element_blank(), 
+    axis.text.y = element_text(color = "black", size = 10),
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    
+    legend.position = "none",
+    
+    plot.caption=element_text(size=7, color="grey40"),
+  )
+```
+
+#### interactive
 
 ```{r}
 library(plotly)
@@ -193,23 +241,17 @@ plot_ly(top20Ingredient,
         type = "bar", orientation = "h",
         hovertemplate = paste('%{y}', '<br>%{x} recipes<br>'),
         marker = list(
-          color = "#41ab5d",
+          color = "#639a67",
           line = list(width = 0)
         )) %>%
   layout(title = "Popular Ingredients in Vegetarian Recipes",
          xaxis = list(title = "# of recipes with the ingredient"),
          yaxis = list(title = ""),
          annotations = list(x = 0.21, y = -0.115, 
-                            text = "Note: Ingredients appear in less than 10 recipes or \nmore than 100 recipes are excluded.",
+                            text = "Note: Ingredients appear in less than 10 recipes or \nmore than 300 recipes are excluded.",
                             showarrow = F, xref='paper', yref='paper', 
                             xanchor='right', yanchor='auto', xshift=0, yshift=0,align="left",
                             font=list(size=10, color="grey")))
-  
-fig <- plot_ly(df, type='bar', x = ~country, y = ~pop, text = ~lifeExp, name="",
-               hovertemplate = paste('%{x}', '<br>lifeExp: %{text:.2s}<br>'),
-               texttemplate = '%{y:.2s}', textposition = 'outside')
+
 ```
-
-### Network
-
 
