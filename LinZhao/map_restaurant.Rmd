@@ -1,0 +1,266 @@
+---
+title: "map_restaurant"
+author: "Lin Zhao"
+date: "4/16/2020"
+output: 
+ html_notebook:
+    default
+ html_document:
+    default
+---
+
+#import resturant csv to my computer
+```{r}
+data1 <- read.csv("/Users/lin/Desktop/Restaurant.csv")
+head(data1)
+```
+
+
+```{r}
+class(data1$cuisines)
+```
+
+```{r}
+a <- as.character(data1$cuisines) 
+```
+
+#I am trying to identity which resturant is vegetarian 
+```{r}
+library("stringr")
+vege <- str_detect(a,"Vegetarian")
+data2 <- cbind(vege,data1)
+```
+
+
+#Filter out the restaurant which is not vegetarian
+
+```{r}
+class(data2$vege)
+data2$vege <- as.numeric(data2$vege)
+```
+
+
+#do the subset for vege
+```{r}
+library(dplyr)
+data3 <- subset(data2,vege==1) 
+```
+
+
+
+## create a new dataset that I convert to lat and lon to the county level
+```{r}
+library(dplyr)
+data4 <- data3 %>% 
+  select(id,city,name,latitude, longitude,phones,paymentTypes,postalCode) %>% 
+  na.omit()
+View(data4)
+```
+
+
+
+```{r}
+library(sp)
+library(maps)
+library(maptools)
+
+# The single argument to this function, pointsDF, is a data.frame in which:
+#   - column 1 contains the longitude in degrees (negative in the US)
+#   - column 2 contains the latitude in degrees
+
+latlong2county <- function(pointsDF) {
+    # Prepare SpatialPolygons object with one SpatialPolygon
+    # per county
+    counties <- map('county', fill=TRUE, col="transparent", plot=FALSE)
+    IDs <- sapply(strsplit(counties$names, ":"), function(x) x[1])
+    counties_sp <- map2SpatialPolygons(counties, IDs=IDs,
+                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+    # Convert pointsDF to a SpatialPoints object 
+    pointsSP <- SpatialPoints(pointsDF, 
+                    proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+    # Use 'over' to get _indices_ of the Polygons object containing each point 
+    indices <- over(pointsSP, counties_sp)
+
+    # Return the county names of the Polygons object containing each point
+    countyNames <- sapply(counties_sp@polygons, function(x) x@ID)
+    countyNames[indices]
+}
+
+# Test the function using points in Wisconsin and Oregon.
+testPoints <- data.frame(x = data4$longitude, y = data4$latitude)
+
+county_list<- latlong2county(testPoints)
+```
+
+
+```{r}
+county_list_data <- as.data.frame(county_list)
+data5 <- cbind(data4,county_list_data) #merge to data4 by adding a column named county_list
+```
+
+
+
+```{r}
+data5 <- data5 %>% 
+  na.omit()
+unique(data5$county_list)
+```
+
+
+#regular expression for ny vege restaurant data
+```{r}
+county_name <- as.character(data5$county_list)
+# Remove all before and up to ",":
+county_name2 <- gsub(".*,","",county_name)
+data6 <- cbind(county_name2,data5)  
+data6$county_list <- NULL
+data6
+```
+
+
+```{r}
+unique(data6$county_name2)
+```
+
+
+#import election data 
+```{r}
+eleccounty<-read.csv("/Users/lin/Desktop/2016_US_County_Level_Presidential_Results.csv")
+
+eleccounty$X1 <- NULL
+
+eleccounty <- eleccounty %>% 
+         filter(state_abbr=="NY") #there are 62 counties in NY State
+
+```
+
+#do some regular expression on election data
+
+```{r}
+foo <- as.character(eleccounty$county_name)
+```
+
+
+```{r}
+foo2 <- gsub("\\s*\\w*$", "", foo)
+foo3 <- tolower(foo2)
+foo4 <- str_replace(foo3, "st. lawrence", "st lawrence")
+foo4
+```
+
+#regular expression of final step for election data
+```{r}
+new_eleccounty <- cbind(eleccounty,foo4)
+
+names(new_eleccounty)[names(new_eleccounty) == 'foo4'] <- 'county_name2'
+```
+
+
+#calculate who is win in 2016 on the county level
+```{r}
+new_eleccounty <- new_eleccounty %>% 
+  mutate(difference_in_vote=votes_gop-votes_dem) %>% 
+  mutate (R.D= ifelse(difference_in_vote > 0, "Republican", "Democrat"))
+``` 
+
+
+#combine cleaned ny vege reastaurant with election county data in 2016
+
+```{r}
+#left outer join
+df <- left_join(data6, new_eleccounty,by = "county_name2")
+
+df$paymentTypes <- as.character(df$paymentTypes)
+df$paymentTypes[df$paymentTypes==""] <- "NA"
+df$paymentTypes <- as.factor(df$paymentTypes)
+```
+
+
+
+#make a leaflet map of vege restaurant in NY States
+```{r}
+library(leaflet)
+
+library(RColorBrewer)
+
+pal = colorFactor(palette = c("blue", "red"), domain = df$R.D) # Grab a palette
+color_vote = pal(df$R.D)
+
+content <- paste("ID:",df$id,"<br/>",
+                 "County:",df$county_name,"<br/>",
+                 "Restaurant Name:",df$name,"<br/>",
+                 "Phones:",df$phones,"<br/>",
+                 "PaymentType:",df$paymentTypes,"<br/>",
+                 "PostCode",df$postalCode,"<br/>"
+                 )
+                
+
+leaflet(df) %>%
+  addProviderTiles("Stamen.TonerLite") %>% 
+  # Using the Provider Name
+  addCircles(color=color_vote,
+             lng = ~longitude, 
+             lat = ~latitude,
+             popup = content,
+             fillOpacity = 1,
+             stroke=FALSE) %>% 
+  addLegend(pal = pal, values = ~df$R.D, title = "Won Party in 2016") %>% 
+  addCircleMarkers(clusterOptions = markerClusterOptions())
+
+```
+
+
+
+
+
+#make another graph (not useful, feel free to ignore it!)
+
+```{r}
+as.character(df$county_name)
+```
+
+
+```{r}
+#install.packages("urbnmapr")
+library(urbnmapr)
+# Returns a ggplot2 object with a geom_map of the the lower 
+# 48 states (plus Hawaii & Alaska reset on the bottom) 
+uscounties_sf <- get_urbn_map("counties", 
+                              sf = TRUE)
+
+str(uscounties_sf)
+```
+
+
+```{r}
+counties <- counties %>% 
+  filter(state_abbv=="NY")
+counties
+```
+
+
+```{r}
+library(ggthemes)
+elec_data <- inner_join(df, counties, by ="county_name")
+```
+
+
+
+
+```{r}
+winstatesmap <- ggplot(elec_data, 
+    aes(x = long, y = lat, group=group)) + 
+    geom_polygon(aes(fill = R.D), color="white")+
+    scale_fill_manual(values = c("steel blue","firebrick"))+
+    theme_map() + 
+    coord_map(projection = "mercator")
+winstatesmap
+```
+
+
+
+
+
+
