@@ -5,26 +5,10 @@ date: "4/16/2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-Res=read.csv("Restaurant.csv")
-head(Res)
-```
+```{r Setup, include=FALSE}
+library(knitr) # I think this is the key. 
 
-```{r}
-Income=read.csv("Income.csv")
-
-Income<-Income %>% 
-  rename(
-    county_fips = State...County.Name,
-    county_id=County.ID,
-    povertyrate=All.Ages.in.Poverty.Percent
-    )
-head(Income)
-```
-
-
-```{r}
-library(leaflet)
+library(leaflet) # also, it's probably a better idea to load librarys before use them 
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -41,6 +25,23 @@ library(raster)
 library(urbnmapr)
 library(tidyverse)
 library(stringr)
+```
+
+```{r setup, include=FALSE}
+Res=read.csv("Restaurant.csv")
+head(Res)
+```
+
+```{r}
+Income=read.csv("Income.csv")
+
+Income<-Income %>% 
+  rename(
+    county_fips = State...County.Name,
+    county_id=County.ID,
+    povertyrate=All.Ages.in.Poverty.Percent
+    )
+head(Income)
 ```
 
 
@@ -68,7 +69,7 @@ head(ResVV)
 ResVVV <- ResVV %>% 
   dplyr::select(id,city,name,latitude, longitude,phones,paymentTypes,postalCode) %>% 
   na.omit()
-View(ResVVV)
+#View(ResVVV)
 
 ```
 ```{r}
