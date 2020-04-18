@@ -4,8 +4,16 @@ author: "Ming Gong"
 date: "4/16/2020"
 output: html_document
 ---
+<<<<<<< HEAD
 ```{r}
 library(leaflet)
+=======
+
+```{r Setup, include=FALSE}
+library(knitr) # I think this is the key. 
+
+library(leaflet) # also, it's probably a better idea to load librarys before use them 
+>>>>>>> 6e2084688414d8e3c2bb73c0058d571f7847c9af
 library(readr)
 library(dplyr)
 library(tidyr)
@@ -41,7 +49,10 @@ Income<-Income %>%
 head(Income)
 ```
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 6e2084688414d8e3c2bb73c0058d571f7847c9af
 
 ```{r}
 a =Res$cuisines
@@ -67,7 +78,11 @@ head(ResVV)
 ResVVV <- ResVV %>% 
   dplyr::select(id,city,name,latitude, longitude,phones,paymentTypes,postalCode) %>% 
   na.omit()
+<<<<<<< HEAD
 
+=======
+#View(ResVVV)
+>>>>>>> 6e2084688414d8e3c2bb73c0058d571f7847c9af
 
 ```
 ```{r}
