@@ -1,0 +1,206 @@
+---
+title: "DV Group project"
+author: "Ming Gong"
+date: "4/16/2020"
+output: html_document
+---
+```{r}
+library(leaflet)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(magrittr)
+library(RANN)
+library(ggplot2)
+library(lubridate)
+library(ggmap)
+library(sf)
+library(geojsonio)
+library(ggthemes)
+library(viridis)
+library(raster)
+library(urbnmapr)
+library(tidyverse)
+library(stringr)
+```
+
+```{r setup, include=FALSE}
+Res=read.csv("Restaurant.csv")
+head(Res)
+```
+
+```{r}
+Income=read.csv("Income.csv")
+
+Income<-Income %>% 
+  rename(
+    county_fips = State...County.Name,
+    county_id=County.ID,
+    povertyrate=All.Ages.in.Poverty.Percent
+    )
+head(Income)
+```
+
+
+
+```{r}
+a =Res$cuisines
+```
+
+```{r}
+vege <- str_detect(a,"Vegetarian")
+ResV <- cbind(vege,Res)
+```
+
+```{r}
+class(ResV$vege)
+ResV$vege <- as.numeric(ResV$vege)
+```
+
+```{r}
+ResVV <- subset(ResV,vege==1) 
+head(ResVV)
+```
+
+## create a new dataset that I convert to lat and lon to the county level
+```{r}
+ResVVV <- ResVV %>% 
+  dplyr::select(id,city,name,latitude, longitude,phones,paymentTypes,postalCode) %>% 
+  na.omit()
+
+
+```
+```{r}
+library(sp)
+library(maps)
+library(maptools)
+
+# The single argument to this function, pointsDF, is a data.frame in which:
+#   - column 1 contains the longitude in degrees (negative in the US)
+#   - column 2 contains the latitude in degrees
+
+latlong2county <- function(pointsDF) {
+    # Prepare SpatialPolygons object with one SpatialPolygon
+    # per county
+    counties <- map('county', fill=TRUE, col="transparent", plot=FALSE)
+    IDs <- sapply(strsplit(counties$names, ":"), function(x) x[1])
+    counties_sp <- map2SpatialPolygons(counties, IDs=IDs,
+                     proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+    # Convert pointsDF to a SpatialPoints object 
+    pointsSP <- SpatialPoints(pointsDF, 
+                    proj4string=CRS("+proj=longlat +datum=WGS84"))
+
+    # Use 'over' to get _indices_ of the Polygons object containing each point 
+    indices <- over(pointsSP, counties_sp)
+
+    # Return the county names of the Polygons object containing each point
+    countyNames <- sapply(counties_sp@polygons, function(x) x@ID)
+    countyNames[indices]
+}
+
+# Test the function using points in Wisconsin and Oregon.
+testPoints <- data.frame(x = ResVVV$longitude, y = ResVVV$latitude)
+
+county_list<- latlong2county(testPoints)
+```
+
+```{r}
+county_list_data<-as.data.frame(county_list)
+VRes<-cbind(ResVVV,county_list_data)
+```
+
+```{r}
+VRes<-VRes %>%
+  na.omit
+unique(VRes$county_list)
+```
+
+```{r}
+county_name <- as.character(VRes$county_list)
+# Remove all before and up to ",":
+county_name2 <- gsub(".*,","",county_name)
+data <- cbind(county_name2,VRes)  
+data$county_list <- NULL
+data
+```
+
+```{r}
+unique(data$county_name2)
+```
+
+
+
+
+
+
+
+
+###data manipulation
+```{r}
+Income=read.csv("Income.csv")
+
+Income<-Income %>% 
+  rename(
+    county_fips = State...County.Name,
+    county_id=County.ID,
+    povertyrate=All.Ages.in.Poverty.Percent
+    )
+Income$county_id=as.character(Income$county_id)
+head(Income)
+```
+```{r}
+counties_sf <- get_urbn_map("counties", sf = TRUE)
+
+
+spatial_data <- left_join(counties_sf,
+                          Income,
+                         by=c("county_fips"="county_id"))
+
+ggplot() +
+  geom_sf(spatial_data,
+          mapping = aes(fill = povertyrate),
+          color = "#ffffff", size = 0.25) +
+  labs(fill = "povertyrate")+
+  geom_point(data=data,
+  aes(x=longitude,y=latitude))
+```
+
+
+
+
+###Plot income(poverty) map
+```{r}
+
+counties_sf <- get_urbn_map("counties", sf = TRUE)
+counties_sf<-counties_sf %>%
+filter(state_name == "New York")
+
+
+spatial_data <- left_join(counties_sf,
+                          Income,
+                         by=c("county_fips"="county_id"))
+
+ggplot() +
+  geom_sf(spatial_data,
+          mapping = aes(fill = povertyrate),
+          color = "#ffffff", size = 0.25) +
+  labs(fill = "povertyrate")
+
+```
+
+```{r}
+ggplot() +
+  geom_sf(spatial_data,
+          mapping = aes(fill = povertyrate),
+          color = "#ffffff", size = 0.25) +
+  labs(fill = "povertyrate")+
+  geom_point(data=data,
+  aes(x=longitude,y=latitude))
+
+```
+```{r}
+ggplot()+
+ geom_point(data=data,
+  aes(x=longitude,y=latitude))
+```

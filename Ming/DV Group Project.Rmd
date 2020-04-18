@@ -4,25 +4,6 @@ author: "Ming Gong"
 date: "4/16/2020"
 output: html_document
 ---
-
-```{r setup, include=FALSE}
-Res=read.csv("Restaurant.csv")
-head(Res)
-```
-
-```{r}
-Income=read.csv("Income.csv")
-
-Income<-Income %>% 
-  rename(
-    county_fips = State...County.Name,
-    county_id=County.ID,
-    povertyrate=All.Ages.in.Poverty.Percent
-    )
-head(Income)
-```
-
-
 ```{r}
 library(leaflet)
 library(readr)
@@ -42,6 +23,24 @@ library(urbnmapr)
 library(tidyverse)
 library(stringr)
 ```
+
+```{r setup, include=FALSE}
+Res=read.csv("Restaurant.csv")
+head(Res)
+```
+
+```{r}
+Income=read.csv("Income.csv")
+
+Income<-Income %>% 
+  rename(
+    county_fips = State...County.Name,
+    county_id=County.ID,
+    povertyrate=All.Ages.in.Poverty.Percent
+    )
+head(Income)
+```
+
 
 
 ```{r}
@@ -68,7 +67,7 @@ head(ResVV)
 ResVVV <- ResVV %>% 
   dplyr::select(id,city,name,latitude, longitude,phones,paymentTypes,postalCode) %>% 
   na.omit()
-View(ResVVV)
+
 
 ```
 ```{r}
@@ -131,43 +130,11 @@ unique(data$county_name2)
 ```
 
 
-###leaflet of the restaurant
 
 
-```{r}
-library(leaflet)
 
-library(RColorBrewer)
 
-pal = colorFactor(palette = c("blue", "red"), domain = df$R.D) # Grab a palette
-color_vote = pal(df$R.D)
 
-content <- paste("ID:",df$id,"<br/>",
-                 "County:",df$county_name,"<br/>",
-                 "Restaurant Name:",df$name,"<br/>",
-                 "Phones:",df$phones,"<br/>",
-                 "PaymentType:",df$paymentTypes,"<br/>",
-                 "PostCode",df$postalCode,"<br/>"
-                 )
-                
-
-leaflet(df) %>%
-  addProviderTiles("Stamen.TonerLite") %>% 
-  # Using the Provider Name
-  addCircles(color=color_vote,
-             lng = ~longitude, 
-             lat = ~latitude,
-             popup = content,
-             fillOpacity = 1,
-             stroke=FALSE) %>% 
-  addLegend(pal = pal, values = ~df$R.D, title = "Won Party in 2016") %>% 
-  addCircleMarkers(clusterOptions = markerClusterOptions())
-
-```
-```{r}
-install.packages("devtools")
-devtools::install_github("UrbanInstitute/urbnmapr")
-```
 
 ###data manipulation
 ```{r}
