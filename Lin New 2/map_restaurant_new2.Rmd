@@ -1,0 +1,80 @@
+---
+title: "lin_map_new"
+author: "Lin Zhao"
+date: "5/2/2020"
+output: 
+ html_notebook:
+    default
+ html_document:
+    default
+---
+
+## Map of Vegetarian restaurants (concerning political gravity)
+
+#How is the distribution of vegetarian restaurants in New York State? Does political ideology relate to that distribution? To dive into those questions, we combine two datasets (one contains NY restaurants from datafiniti and another comes from 2016 U.S. presidential election) together for visualization. 
+
+
+```{r}
+load(file = "cleaned_datapart1.Rdata")
+load(file = "cleaned_datapart2.Rdata")
+
+library(leaflet)
+
+library(RColorBrewer)
+
+pal = colorFactor(palette = c("blue", "red"), domain = df$R.D) # Grab a palette
+color_vote = pal(df$R.D)
+
+content2 <- paste("County:",data6$county_name2,"<br/>",
+                 "Restaurant Name:",data6$name,"<br/>",
+                 "Phones:",data6$phones,"<br/>",
+                 "PaymentType:",data6$paymentTypes,"<br/>",
+                 "PostCode:",data6$postalCode,"<br/>"
+                 )
+
+
+content3 <- paste("County:",df$county_name,"<br/>",
+                 "Restaurant Name:",df$name,"<br/>",
+                 "Phones:",df$phones,"<br/>",
+                 "PaymentType:",df$paymentTypes,"<br/>",
+                 "PostCode:",df$postalCode,"<br/>"
+                 )
+                
+m <- leaflet(data=data6) %>%
+   # Base groups
+  addTiles(group = "OSM (default)") %>%
+  addProviderTiles(providers$Stamen.Toner, group = "Toner") %>%
+  addProviderTiles(providers$Stamen.TonerLite, group = "Toner Lite") %>%
+   # Overlay groups
+  addCircles(
+             color="green",
+             lng = ~longitude, 
+             lat = ~latitude,
+             popup = content2,
+             group = "Vegetarian Restaurants") %>% 
+  addCircleMarkers(data = df, 
+             lng = ~longitude, 
+             lat = ~latitude,
+             popup = content3,
+             group = "Political Ideology",
+             color= color_vote) %>%
+  addLegend(pal = pal, values = ~df$R.D, title = "Won Party in 2016") %>% 
+  # Layers control
+  addLayersControl(
+    baseGroups = c("OSM (default)", "Toner", "Toner Lite"),
+    overlayGroups = c("Vegetarian Restaurants", "Political Ideology"),
+    options = layersControlOptions(collapsed = FALSE)
+  )
+
+m
+```
+
+
+#The leaflet gives you a choice to see what you wanna take a look. When you click the botton of ‘Vegetarian Restaurants’, it provides a quick visual overview of the geographical distribution of vegetarian restaurants in New York State. Also, from popup windows, you could find more restaurants information, including payment type, phone numbers, name of the restaurant, county and post code. When clicking the button of ‘Political Ideology’, you could quickly know the county where each restaurant is located at support which political party in 2016 presidential election. The color blue represents who are democratic supporters and the color red shows who are republican supporters.
+
+#Interestingly,from the map we notice that vegetarian restaurants scatters in the rural area while dense in the urban area such as Manhattan.  
+
+
+
+
+
