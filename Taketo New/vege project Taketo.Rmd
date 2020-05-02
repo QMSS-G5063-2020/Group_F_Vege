@@ -1,0 +1,110 @@
+---
+title: "Vegetarian Project"
+author: "Taketo Muroya"
+output: 
+  html_document:
+    code_folding: hide
+    highlight: textmate
+always_allow_html: yes
+---
+
+```{r Setup, include=FALSE, results='hide', warning=FALSE}
+library(knitr)
+opts_chunk$set(fig.path="figures/", cache.path="cache/", 
+               cache=FALSE,echo=TRUE,message=FALSE,warning=FALSE)
+```
+
+# {.tabset .tabset-fade .tabset-pills}
+
+## Introduction
+
+Along with growing interests in healty life and animal protection, the concept of "Vegetarian" or "Vegan" has become more and more familiar among people. Nowadays, we often see the vegetarian or vegan menus in restaurants. Observing the expansion of vegans, "The Economist" said that 2019 would be ["the Year of the Vegan."](https://worldin2019.economist.com/theyearofthevegan) Therefore, it is worth exploring the data about vegetarian or vegan restaurants, recipes, and profiles.
+
+<br>
+This website visualizes the locations of vegetarian or vegan restraunts in New York state and then, examines its relationship with [political ideology](https://sun-wenjun.github.io/vegetarian_visualization_project/map_restaurant.html) and poverty situation. Also, implementing the text analysis on [vegetarian recipes](https://sun-wenjun.github.io/vegetarian_visualization_project/recipe.html), it is revealed what kind of ingredients are most likely included. In additon, the interest trend of vegetarian on websites, and the personal character of vegetarian, is studied.
+
+## Google Trend
+
+How has people's interests in vegetarian changed over time? The data from "Google Trend" provides the monthly number of search volume in the U.S. from January 2004 to the present. It also offeres the number of search volume by state level.
+
+```{r, fig.width=10, fig.height=5}
+# Setting up
+library(ggplot2)
+library(ggthemes)
+library(tidyverse)
+library(dplyr)
+library(gtrendsR)
+
+# Vegetarian search
+veg <- gtrends(keyword=c("vegetarian"), geo="US", time="all")
+trend <- veg$interest_over_time
+
+ggplot(trend, aes(date, hits))+ggtitle("Google Search 'Vegetarian'")+theme_hc()+
+  geom_line(color='#4E79A7')+xlab('Time')+ylab('Search Volume (Max=100)')+
+  geom_smooth(formula=y~x, span=0.7, method='loess', se=TRUE, col='#E15759')
+```
+
+The Google search volume for "vegetarian" seems to be increasing recent years. In addition, people more often search "vegetarian" in November and January. This might be because vegetarians wonder what dish they should have on Thanksgiving or New Year.
+
+```{r, fig.width=10, fig.height=5}
+# search by state
+region_top <- veg$interest_by_region[1:8,]
+p1<-ggplot(region_top, aes(x=reorder(location, hits), y=hits))+
+  geom_bar(fill='#4E79A7', stat="identity", position="identity", alpha=0.5)+
+  xlab('')+ylab('Search Volume (Max=100)')+
+  scale_y_continuous(breaks=seq(0,100,length=5))+coord_cartesian(ylim=c(0,100))+
+  ggtitle("Top 8 States Searching 'Vegetarian'")+theme_hc()
+
+region_bottom <- veg$interest_by_region[44:51,]
+p2<-ggplot(region_bottom, aes(x=reorder(location, desc(hits)), y=hits))+
+  geom_bar(fill="#E15759", stat="identity", position="identity", alpha=0.5)+
+  xlab('State')+ylab('Search Volume (Max=100)')+
+  scale_y_continuous(breaks=seq(0,100,length=5))+coord_cartesian(ylim=c(0,50))+
+  ggtitle("Bottom 8 States Searching 'Vegetarian'")+theme_hc()
+
+gridExtra::grid.arrange(p1, p2, ncol=1)
+```
+
+Most of the top 8 states are located in either east or west coast, while bottom 8 states are relatively located in a middle land. According to the 2016 US presidential election, top 8 states are all "Blue" state (Democratic) and bottom 8 states are all "Red" state (Republican). This mgiht indicate that liberal people are more interested in "vegetarian" than conservative people.
+
+## Who is Vegetarian?
+
+It is also important to know what kind of persons are actually vegetarian or vegan. The next graph shows the percentage of vegetarian or vegan in the U.S. by age, income, and political ideology (Gallup 2018).
+
+```{r, fig.width=10, fig.height=5}
+# load data
+consumer <- read.csv("consumer.csv")
+# https://news.gallup.com/poll/238328/snapshot-few-americans-vegetarian-vegan.aspx
+
+# change the order
+consumer <- transform(consumer, category=factor(category, 
+                      levels=c("18-29", "30-49", "50-64", "65+", 
+                               "$0-$30K", "$30K-$75K", "$75K+",
+                               "Conservative", "Moderate", "Liberal")))
+
+consumer <- 
+  transform(consumer, group=factor(group, levels=c("vegetarian", "vegan")))
+
+# visualization
+p1<-ggplot(consumer[1:8,], aes(x=category, y=value, fill=group))+
+  geom_bar(position="dodge", stat="identity", alpha=0.5)+xlab('')+
+  ylab('percentage')+ggtitle("Age")+theme(legend.title=element_blank())+
+  scale_fill_manual(values = c("#59A14F","#EDC948"))+theme_hc()+
+  scale_y_continuous(breaks=seq(0,10,length=6))+coord_cartesian(ylim=c(0,10))
+
+p2<-ggplot(consumer[9:14,], aes(x=category, y=value, fill=group))+
+  geom_bar(position="dodge", stat="identity", alpha=0.5)+xlab('')+ylab('')+
+  ggtitle("Annual Income")+theme(legend.title=element_blank())+
+  scale_fill_manual(values = c("#59A14F","#EDC948"))+theme_hc()+
+  scale_y_continuous(breaks=seq(0,10,length=6))+coord_cartesian(ylim=c(0,10))
+
+p3<-ggplot(consumer[15:20,], aes(x=category, y=value, fill=group))+
+  geom_bar(position="dodge", stat="identity", alpha=0.5)+xlab('')+ylab('')+
+  ggtitle("Political Ideology")+theme(legend.title=element_blank())+
+  scale_fill_manual(values = c("#59A14F","#EDC948"))+theme_hc()+
+  scale_y_continuous(breaks=seq(0,10,length=6))+coord_cartesian(ylim=c(0,10))
+
+gridExtra::grid.arrange(p1, p2, p3, nrow = 1)
+```
+
+Relatively younger people seem to be vegetaraian or vegan. Surprisingly, relatively low income people are more likely to be vegetaraian or vegan. In addition, liberal people are more like vegetaraian or vegan than conservative people.
