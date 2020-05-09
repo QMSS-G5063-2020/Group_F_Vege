@@ -149,6 +149,34 @@ ingredientDfCleaned <- ingredientDf %>%
 save(ingredientDfCleaned, file = "ingredientDfCleaned.RData")
 ```
 
+```{r}
+# frequency word in recipe title
+
+library(tm) 
+
+load("combined_recipe_id_ingredient.RData")
+
+myStopWords <- c("quick", "best", "black", "homemade")
+
+allTitle <- paste(combined$recipe_name, collapse = " ") %>%
+  removeNumbers() %>%
+  removePunctuation() %>%
+  tolower() %>%
+  removeWords(c(stopwords("english"), myStopWords)) %>%
+  stripWhitespace()
+
+titleList <- strsplit(allTitle, " ")
+titleDf <- data.frame(titleList, stringsAsFactors = FALSE) 
+names(titleDf) <- "word"
+titleDf <- titleDf %>%
+  group_by(word) %>%
+  tally() %>%
+  ungroup()
+
+save(titleDf, file="titleWordCount.RData")
+```
+
+
 ## Visualization 
 
 ### Wordcloud
@@ -176,6 +204,19 @@ set.seed(1997)
 wordcloud(wordcloudDf$ingredient, wordcloudDf$cnt, scale = c(1.5,.25), min.freq = 0,
           max.words = 100, 
           colors = brewer.pal(max(7, ncol(wordcloudDf$cnt)),"Greens"))
+```
+
+Play around with the title of the recipes...
+```{r}
+load("titleWordCount.RData")
+
+titleDf <- titleDf %>%
+  filter(n > 10) 
+
+set.seed(1997)
+wordcloud(titleDf$word, titleDf$n, scale = c(1.5,.25), min.freq = 0,
+          max.words = 100, 
+          colors = brewer.pal(max(7, ncol(titleDf$n)),"Greens"))
 ```
 
 ### Bar
