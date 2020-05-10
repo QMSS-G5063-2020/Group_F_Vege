@@ -242,7 +242,8 @@ ggplot(top20Ingredient) +
   coord_flip() + 
   
   labs(
-    title = "",
+    title = "Need a Little Greenness",
+    subtitle = "Number of times each ingredient appears in the top 1000 recipes.",
     caption = "
     Note: Ingredients appear in less than 10 recipes or more than 300 recipes are excluded.
     Data Source: https://spoonacular.com/food-api/
@@ -262,6 +263,7 @@ ggplot(top20Ingredient) +
     legend.position = "none",
     
     plot.caption=element_text(size=7, color="grey40"),
+    plot.subtitle = element_text(size=10, color="grey60", face="italic"),
   )
 ```
 
